@@ -1,0 +1,37 @@
+{
+  "kind": "collectionType",
+  "collectionName": "channel_statistics",
+  "info": {
+    "singularName": "channel-statistic",
+    "pluralName": "channel-statistics",
+    "displayName": "Channel Statistic"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "channel_id": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::channel-id.channel-id",
+      "inversedBy": "channel_statistics"
+    },
+    "viewCount": {
+      "type": "biginteger"
+    },
+    "subscriberCount": {
+      "type": "biginteger"
+    },
+    "hiddenSubscriberCount": {
+      "type": "boolean"
+    },
+    "videoCount": {
+      "type": "biginteger"
+    },
+    "cDateTime": {
+      "type": "datetime",
+      "required": true
+    }
+  }
+}

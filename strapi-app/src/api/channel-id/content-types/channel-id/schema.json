@@ -1,0 +1,52 @@
+{
+  "kind": "collectionType",
+  "collectionName": "channel_ids",
+  "info": {
+    "singularName": "channel-id",
+    "pluralName": "channel-ids",
+    "displayName": "Channel Id",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "mtmId": {
+      "type": "biginteger"
+    },
+    "title": {
+      "type": "string",
+      "unique": false,
+      "required": false
+    },
+    "channelId": {
+      "type": "string",
+      "unique": true,
+      "required": true
+    },
+    "description": {
+      "type": "text"
+    },
+    "channelPublishedAt": {
+      "type": "datetime",
+      "required": false
+    },
+    "thumbnails": {
+      "type": "json"
+    },
+    "dataStatus": {
+      "type": "boolean",
+      "default": true
+    },
+    "country": {
+      "type": "string"
+    },
+    "channel_statistics": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::channel-statistic.channel-statistic",
+      "mappedBy": "channel_id"
+    }
+  }
+}

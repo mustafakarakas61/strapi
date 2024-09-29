@@ -1,0 +1,51 @@
+{
+  "kind": "collectionType",
+  "collectionName": "video_infos",
+  "info": {
+    "singularName": "video-info",
+    "pluralName": "video-infos",
+    "displayName": "Video Info"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "videoId": {
+      "type": "string"
+    },
+    "channelId": {
+      "type": "string"
+    },
+    "title": {
+      "type": "text"
+    },
+    "viewCount": {
+      "type": "biginteger"
+    },
+    "likeCount": {
+      "type": "biginteger"
+    },
+    "commentCount": {
+      "type": "biginteger"
+    },
+    "duration": {
+      "type": "biginteger"
+    },
+    "subscriberCount": {
+      "type": "biginteger"
+    },
+    "videoCount": {
+      "type": "biginteger"
+    },
+    "totalViewCount": {
+      "type": "biginteger"
+    },
+    "uploadDate": {
+      "type": "datetime"
+    },
+    "joinedAt": {
+      "type": "datetime"
+    }
+  }
+}
