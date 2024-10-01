@@ -539,6 +539,10 @@ export interface ApiChannelIdChannelId extends Struct.CollectionTypeSchema {
       'oneToMany',
       'api::channel-statistic.channel-statistic'
     >;
+    channel_videos: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::channel-video.channel-video'
+    >;
     createdAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
     publishedAt: Schema.Attribute.DateTime;
@@ -561,6 +565,7 @@ export interface ApiChannelStatisticChannelStatistic
     singularName: 'channel-statistic';
     pluralName: 'channel-statistics';
     displayName: 'Channel Statistic';
+    description: '';
   };
   options: {
     draftAndPublish: true;
@@ -574,7 +579,7 @@ export interface ApiChannelStatisticChannelStatistic
     subscriberCount: Schema.Attribute.BigInteger;
     hiddenSubscriberCount: Schema.Attribute.Boolean;
     videoCount: Schema.Attribute.BigInteger;
-    cDateTime: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    cDateTime: Schema.Attribute.Date & Schema.Attribute.Required;
     createdAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
     publishedAt: Schema.Attribute.DateTime;
@@ -586,6 +591,48 @@ export interface ApiChannelStatisticChannelStatistic
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::channel-statistic.channel-statistic'
+    >;
+  };
+}
+
+export interface ApiChannelVideoChannelVideo
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'channel_videos';
+  info: {
+    singularName: 'channel-video';
+    pluralName: 'channel-videos';
+    displayName: 'Channel Video';
+    description: '';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    title: Schema.Attribute.String & Schema.Attribute.Required;
+    description: Schema.Attribute.Text;
+    thumbnails: Schema.Attribute.JSON;
+    tags: Schema.Attribute.Text;
+    categoryId: Schema.Attribute.Integer;
+    duration: Schema.Attribute.BigInteger;
+    viewCount: Schema.Attribute.BigInteger;
+    likeCount: Schema.Attribute.BigInteger;
+    commentCount: Schema.Attribute.BigInteger;
+    channel_id: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::channel-id.channel-id'
+    >;
+    videoPublishedAt: Schema.Attribute.DateTime;
+    createdAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    publishedAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::channel-video.channel-video'
     >;
   };
 }
@@ -1034,6 +1081,7 @@ declare module '@strapi/strapi' {
       'api::about.about': ApiAboutAbout;
       'api::channel-id.channel-id': ApiChannelIdChannelId;
       'api::channel-statistic.channel-statistic': ApiChannelStatisticChannelStatistic;
+      'api::channel-video.channel-video': ApiChannelVideoChannelVideo;
       'api::global.global': ApiGlobalGlobal;
       'api::video-info.video-info': ApiVideoInfoVideoInfo;
       'admin::permission': AdminPermission;

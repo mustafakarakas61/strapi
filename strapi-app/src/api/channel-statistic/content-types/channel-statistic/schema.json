@@ -4,7 +4,8 @@
   "info": {
     "singularName": "channel-statistic",
     "pluralName": "channel-statistics",
-    "displayName": "Channel Statistic"
+    "displayName": "Channel Statistic",
+    "description": ""
   },
   "options": {
     "draftAndPublish": true
@@ -30,7 +31,7 @@
       "type": "biginteger"
     },
     "cDateTime": {
-      "type": "datetime",
+      "type": "date",
       "required": true
     }
   }

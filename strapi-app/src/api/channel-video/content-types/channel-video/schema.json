@@ -1,0 +1,53 @@
+{
+  "kind": "collectionType",
+  "collectionName": "channel_videos",
+  "info": {
+    "singularName": "channel-video",
+    "pluralName": "channel-videos",
+    "displayName": "Channel Video",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "description": {
+      "type": "text"
+    },
+    "thumbnails": {
+      "type": "json"
+    },
+    "tags": {
+      "type": "text"
+    },
+    "categoryId": {
+      "type": "integer"
+    },
+    "duration": {
+      "type": "biginteger"
+    },
+    "viewCount": {
+      "type": "biginteger"
+    },
+    "likeCount": {
+      "type": "biginteger"
+    },
+    "commentCount": {
+      "type": "biginteger"
+    },
+    "channel_id": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::channel-id.channel-id",
+      "inversedBy": "channel_videos"
+    },
+    "videoPublishedAt": {
+      "type": "datetime"
+    }
+  }
+}
