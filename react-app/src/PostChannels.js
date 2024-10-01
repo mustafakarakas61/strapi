@@ -1,9 +1,114 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
+function parseDuration(duration) {
+    const regex =/P(?:([0-9]+)Y)?(?:([0-9]+)M)?(?:([0-9]+)D)?T(?:([0-9]+)H)?(?:([0-9]+)M)?(?:([0-9]+)S)?/;
+    const matches = duration.match(regex);
+    // Eğer eşleşme yoksa, 0 döndür
+    if (!matches) {
+        console.error('Geçersiz süre formatı:', duration);
+        return 0;
+    }
+    const years = parseInt(matches[1] || 0, 10);
+    const months = parseInt(matches[2] || 0, 10);
+    const days = parseInt(matches[3] || 0, 10);
+    const hours = parseInt(matches[4] || 0, 10);
+    const minutes = parseInt(matches[5] || 0, 10);
+    const seconds = parseInt(matches[6] || 0, 10);
+    return (
+        seconds +
+        minutes * 60 +
+        hours * 3600 +
+        days * 86400 +
+        months * 2592000 +
+        years * 31536000
+    );
+}
+
+function formatDuration(seconds) {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    return `${h > 0 ? `${h}saat ` : ""}${m > 0 ? `${m}dakika ` : ""}${
+        s > 0 ? `${s}saniye` : ""
+    }`;
+}
+
 export default function PostChannels() {
     const [token, setToken] = useState('');
     const [channelId, setChannelId] = useState('');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+
+    const handleFetchVideos = async () => {
+        const apiKey = process.env.REACT_APP_YOUTUBE_API_KEY;
+        const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&publishedAfter=${new Date(startDate).toISOString()}&publishedBefore=${new Date(endDate).toISOString()}&key=${apiKey}`;
+
+        try {
+            const response = await axios.get(url);
+            let videoIds = [];
+
+            if (response.data.items && response.data.items.length > 0) {
+                let items = response.data.items;
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].id && items[i].id.videoId) {
+                        videoIds.push(items[i].id.videoId);
+                    }
+                }
+
+            }
+
+            if (videoIds.length > 0) {
+                const videoIdsJoined = videoIds.join(',');
+                const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${videoIdsJoined}&key=${apiKey}`;
+                const response = await axios.get(url);
+// TODO: videoId ve cDate kontrolü sağlanılarak var olup olmadığı kontro ledeilecek. yoksa eklenecek
+                if (response.data.items && response.data.items.length > 0) {
+                    let items = response.data.items;
+                    for (let i = 0; i < items.length; i++) {
+                        const findDocUrl =`${process.env.REACT_APP_STRAPI_API_URL}/channel-ids?filters[channelId][$eqi]=${items[i].snippet.channelId}`
+                        const responseDocUrl = await axios.get(findDocUrl)
+
+                        if (responseDocUrl.data.data.length > 0) {
+                            const docId = responseDocUrl.data.data[0].documentId
+
+                            const newVideos = {
+                                data: {
+                                    videoId : items[i].id,
+                                    channel_id : docId,
+                                    videoPublishedAt : items[i].snippet.publishedAt,
+                                    title : items[i].snippet.title,
+                                    description : items[i].snippet.description,
+                                    thumbnails : items[i].snippet.thumbnails,
+                                    tags: items[i].snippet.tags ? items[i].snippet.tags.join(',') : '',
+                                    categoryId : items[i].snippet.categoryId,
+                                    duration : parseDuration(items[i].contentDetails.duration),
+                                    viewCount : items[i].statistics.viewCount,
+                                    likeCount : items[i].statistics.likeCount,
+                                    commentCount : items[i].statistics.commentCount,
+                                    cDate : new Date().toISOString()
+                                }
+                            };
+
+                            await axios.post(`${process.env.REACT_APP_STRAPI_API_URL}/channel-videos`, newVideos, {
+                                headers: {
+                                    'Authorization': `Bearer ${token}`,
+                                    'Content-Type': 'application/json'
+                                }
+                            });
+                            console.log(`Viedo bilgisi başarıyla eklendi: ${items[i].id}`);
+                        } else {
+                            console.error("Dokuman bilgisi alınamadı")
+                        }
+
+                    }
+
+                }
+            }
+        } catch (error) {
+            console.error(`Hata: ${error.response ? error.response.data : error.message}`);
+        }
+    };
 
     const handleStatisticsUpdate = async () => {
         const today = new Date().toISOString().split('T')[0];
@@ -40,7 +145,7 @@ export default function PostChannels() {
             for (const item of allItems) {
                 const channelId = item.channelId;
                 const apiKey = process.env.REACT_APP_YOUTUBE_API_KEY;
-                const statsUrl = `${process.env.REACT_APP_STRAPI_API_URL}/channel-statistics?filters[channel_id][$eq]=${item.id}&filters[cDateTime][$eq]=${today}`;
+                const statsUrl = `${process.env.REACT_APP_STRAPI_API_URL}/channel-statistics?filters[channel_id][$eq]=${item.id}&filters[cDate][$eq]=${today}`;
 
                 const existingStatsResponse = await axios.get(statsUrl, {
                     headers: {
@@ -62,7 +167,7 @@ export default function PostChannels() {
                                 subscriberCount: stats.subscriberCount,
                                 hiddenSubscriberCount: stats.hiddenSubscriberCount,
                                 videoCount: stats.videoCount,
-                                cDateTime: new Date().toISOString()
+                                cDate: new Date().toISOString()
                             }
                         };
 
@@ -301,6 +406,25 @@ export default function PostChannels() {
             <button id="updateAllButton">Güncelle</button>
             <h2>İstatistikleri Güncelle</h2>
             <button id="statsUpdateButton">Güncelle</button>
+
+            <h2>YouTube Videolarını Getir</h2>
+            <input
+                type="text"
+                value={channelId}
+                onChange={(e) => setChannelId(e.target.value)}
+                placeholder="Channel ID'yi buraya girin"
+            />
+            <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+            />
+            <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+            />
+            <button onClick={handleFetchVideos}>Videoları Getir</button>
         </div>
     );
 }

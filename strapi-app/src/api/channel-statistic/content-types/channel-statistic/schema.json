@@ -30,7 +30,7 @@
     "videoCount": {
       "type": "biginteger"
     },
-    "cDateTime": {
+    "cDate": {
       "type": "date",
       "required": true
     }

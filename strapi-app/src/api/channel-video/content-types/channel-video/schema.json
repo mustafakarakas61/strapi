@@ -48,6 +48,14 @@
     },
     "videoPublishedAt": {
       "type": "datetime"
+    },
+    "cDate": {
+      "type": "date"
+    },
+    "videoId": {
+      "type": "string",
+      "unique": true,
+      "required": true
     }
   }
 }

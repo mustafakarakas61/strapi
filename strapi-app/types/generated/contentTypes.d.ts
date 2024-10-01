@@ -579,7 +579,7 @@ export interface ApiChannelStatisticChannelStatistic
     subscriberCount: Schema.Attribute.BigInteger;
     hiddenSubscriberCount: Schema.Attribute.Boolean;
     videoCount: Schema.Attribute.BigInteger;
-    cDateTime: Schema.Attribute.Date & Schema.Attribute.Required;
+    cDate: Schema.Attribute.Date & Schema.Attribute.Required;
     createdAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
     publishedAt: Schema.Attribute.DateTime;
@@ -622,6 +622,10 @@ export interface ApiChannelVideoChannelVideo
       'api::channel-id.channel-id'
     >;
     videoPublishedAt: Schema.Attribute.DateTime;
+    cDate: Schema.Attribute.Date;
+    videoId: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
     createdAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
     publishedAt: Schema.Attribute.DateTime;
