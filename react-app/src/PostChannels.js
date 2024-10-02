@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import * as XLSX from "xlsx";
 
 function parseDuration(duration) {
     const regex =/P(?:([0-9]+)Y)?(?:([0-9]+)M)?(?:([0-9]+)D)?T(?:([0-9]+)H)?(?:([0-9]+)M)?(?:([0-9]+)S)?/;
@@ -40,9 +41,107 @@ export default function PostChannels() {
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
 
+    const fetchAllData = async (url, isChannel) => {
+        let allData = [];
+        let page = 1;
+        const pageSize = 100;
+        let tempUrl = url;
+        while (true) {
+            url = tempUrl;
+
+            url = `${url}pagination[page]=${page}&pagination[pageSize]=${pageSize}&filters[dataStatus]=true&[populate]=*`;
+
+            const response = await fetch(url, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            const data = await response.json();
+
+            allData = allData.concat(data.data);
+
+            // Eğer daha fazla veri yoksa döngüden çık
+            if (page >= data.meta.pagination.pageCount) {
+                break;
+            }
+            page++;
+        }
+
+        return allData;
+    };
+
+    const transformDataToExcelFormat = (data) => {
+        if (!data || data.length === 0) {
+            console.error("Veri boş veya hatalı formatta!");
+            return [];
+        }
+        return data.flatMap(video => {
+            let channelName = video.title;
+            let channelDescription = video.description;
+            let channel_url = video.channelId;
+            let subscriber_count = video.channel_statistics?.[0]?.subscriberCount || null;
+            let total_video_count = video.channel_statistics?.[0]?.videoCount || null;
+            let total_view_count = video.channel_statistics?.[0]?.viewCount || null;
+            let channel_join_datetime = video.channelPublishedAt;
+            let country = video.country;
+
+            if (!video.channel_videos || video.channel_videos.length === 0) {
+                return []; // Eğer video yoksa boş array döndür
+            }
+
+            return video.channel_videos.map(publishedVideo => ({
+                "video_name": publishedVideo.title,
+                "video_description": publishedVideo.description,
+                "video_url": `https://youtube.com/watch?v=${publishedVideo.videoId}`,
+                "video_publish_datetime": publishedVideo.videoPublishedAt,
+                "video_view_count": publishedVideo.viewCount,
+                "video_like_count": publishedVideo.likeCount,
+                "video_comment_count": publishedVideo.commentCount,
+                "video_duration": publishedVideo.duration,
+                "video_tags": publishedVideo.tags,
+                "channel_name": channelName,
+                "channel_description": channelDescription,
+                "channel_url": `https://www.youtube.com/channel/${channel_url}`,
+                "channel_country": country,
+                "subscriber_count": subscriber_count,
+                "total_video_count": total_video_count,
+                "total_view_count": total_view_count,
+                "channel_join_datetime": channel_join_datetime,
+                "report_date": new Date().toISOString().split('T')[0]
+            }));
+        });
+    };
+
+
+
+    const exportToExcel = (data) => {
+        console.log(data.length);
+        console.log(data[0])
+        const worksheet = XLSX.utils.json_to_sheet(data);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Veriler");
+        XLSX.writeFile(workbook, "veriler.xlsx");
+    };
+
+    const fetchDataAndExport = async () => {
+        const data = await fetchAllData('http://localhost:1337/api/channel-ids?', true);
+
+        /*channels.map(async channel => {
+
+            console.log("channel", channel)
+
+        });*/
+
+
+        const formattedData = transformDataToExcelFormat(data);
+        console.log(formattedData)
+        exportToExcel(formattedData);
+    };
+
     const handleFetchVideos = async () => {
         const apiKey = process.env.REACT_APP_YOUTUBE_API_KEY;
-        const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&publishedAfter=${new Date(startDate).toISOString()}&publishedBefore=${new Date(endDate).toISOString()}&key=${apiKey}`;
+        const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&publishedAfter=${new Date(startDate).toISOString()}&publishedBefore=${new Date(endDate).toISOString()}&key=${apiKey}&maxResults=1000`;
 
         try {
             const response = await axios.get(url);
@@ -50,6 +149,11 @@ export default function PostChannels() {
 
             if (response.data.items && response.data.items.length > 0) {
                 let items = response.data.items;
+                if (response.data.pageInfo.totalResults >=100) {
+                    console.error("items count is greater than 100: " + response.data.pageInfo.totalResults);
+                } else {
+                    console.log("items count: " + response.data.pageInfo.totalResults);
+                }
                 for (let i = 0; i < items.length; i++) {
                     if (items[i].id && items[i].id.videoId) {
                         videoIds.push(items[i].id.videoId);
@@ -112,6 +216,7 @@ export default function PostChannels() {
 
     const handleStatisticsUpdate = async () => {
         const today = new Date().toISOString().split('T')[0];
+
         const findAllUrl = `${process.env.REACT_APP_STRAPI_API_URL}/channel-ids?sort[1]=title:asc&filters[dataStatus]=true`;
 
         try {
@@ -190,8 +295,6 @@ export default function PostChannels() {
             console.error(`Hata: ${error.response ? error.response.data : error.message}`);
         }
     };
-
-
 
     useEffect(() => {
         const handleButtonClick = async () => {
@@ -424,7 +527,12 @@ export default function PostChannels() {
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
             />
+            <br/>
             <button onClick={handleFetchVideos}>Videoları Getir</button>
+            <br/>
+            <div>
+                <button onClick={fetchDataAndExport}>Excel'e Aktar</button>
+            </div>
         </div>
     );
 }
